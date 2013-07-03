@@ -1,0 +1,19 @@
+{
+  "name": "pather",
+  "version": "0.0.0",
+  "description": "ERROR: No README.md file found!",
+  "main": "connection.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bmeck/rocket.git"
+  },
+  "author": "",
+  "license": "BSD",
+  "gitHead": "a193ccf62ffec02c9836ef7d2b8b3f00c1920138"
+}

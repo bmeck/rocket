@@ -1,3 +1,4 @@
+var async = require('async'); 
 var Connection = require('./connection.js');
 function Path() {
   this.keys=[];
@@ -17,11 +18,18 @@ Path.prototype.postConnect = function (pathFromCurrent, transform) {
   this.postconnections[length]=this.postconnections[length]||[];
   this.postconnections[length].push(new Connection(pathFromCurrent, transform));
 }
-Path.prototype.execute = function (transform) {
+Path.prototype.execute = function (transform, next) {
   var length = this.length;
-  transform.call(this, this.keys.slice(0, length), this.values.slice(0, length));
+  transform.call(this, this.keys.slice(0, length), this.values.slice(0, length), next);
 }
-Path.prototype.push = function (key, value) {
+Path.prototype.peekAtValue = function () {
+  if (this.length === 0) {
+    throw new Error('Cannot peek, no values found');
+  }
+  return this.values[this.length - 1];
+}
+Path.prototype.push = function (key, value, done) {
+  console.log('pushing', key, value)
   var self = this;
   var length = this.length;
   this.keys[length] = key;
@@ -29,32 +37,55 @@ Path.prototype.push = function (key, value) {
   this.preconnections[length] = null;
   this.postconnections[length] = null;
   this.length++;
-  for (var i = 0; i < length; i++) {
-    var connections = this.preconnections[i];
-    if (connections) {
-      var deltaPath = self.keys.slice(i+1,self.length);
-      connections.forEach(function (connection) {
-        if (connection.matches(deltaPath)) {
-           self.execute(connection.transform);
-        } 
-      });
-    }
-  }
+  var i = 0;
+  async.whilst(
+    function () {return i < length;},
+    function (next) {
+      var connections = self.preconnections[i];
+      i++;
+      if (connections) {
+      	var deltaPath = self.keys.slice(i, self.length);
+      	async.forEach(connections, function (connection, next) {
+      	  if (connection.matches(deltaPath)) {
+      	     self.execute(connection.transform, next);
+      	  } 
+          else {
+            next(null);
+          }
+      	}, next);
+      }
+      else {
+        next(null);
+      }
+    },
+    done
+  );
 }
-Path.prototype.pop = function () {
+Path.prototype.pop = function (done) {
   var self = this;
   var length = this.length;
-  for (var i = 0; i < length; i++) {
-    var connections = this.postconnections[i];
-    if (connections) {
-      var deltaPath = self.keys.slice(i+1,self.length);
-      connections.forEach(function (connection) {
-        if (connection.matches(deltaPath)) {
-           self.execute(connection.transform);
-        } 
-      });
+  var i = 0;
+  console.log(self.postconnections, self)
+  async.whilst(
+    function () {return i < length;},
+    function (next) {
+      i++;
+      var connections = self.postconnections[i];
+      if (connections) {
+      	var deltaPath = self.keys.slice(i+1,self.length);
+      	async.forEach(connections, function (connection, step) {
+      	  if (connection.matches(deltaPath)) {
+      	     self.execute(connection.transform, step);
+      	  } 
+      	}, next);
+        return;
+      }
+      next(null);
+    },
+    function (err) {
+      self.length--;
+      done.apply(self, arguments);
     }
-  }
-  this.length--;
+  );
 }
 module.exports = Path;

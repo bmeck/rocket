@@ -4,6 +4,7 @@ function Connection(path, transform) {
   return this;
 }
 Connection.prototype.matches = function (keys) {
+  if (keys.length !== this.path.length) return false;
   return this.path.every(function(pathKey,i) {
     if (pathKey == null) {
       return true;
