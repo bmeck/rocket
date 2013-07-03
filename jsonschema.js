@@ -82,6 +82,7 @@ JSONSchema.prototype.validateObject = function (path, value, schema, done) {
 			toCheck++;
 			path.preConnect([key], function (schema, keys, values, next) {
 				self.validate(path, values[values.length-1], schema, function (err) {
+					console.log(keys)
 					if (err) {
 						next(err);
 						return;
@@ -112,6 +113,7 @@ JSONSchema.prototype.validateArray = function (path, value, schema, done) {
 		}.bind(null, schema.items));
 		path.postConnect([], function (schema, keys, values, next) {
 			console.log('POSTCONNECTED');
+			console.log(path);
 			next(null);
 			self.executeValidate(path, value, schema);
 		}.bind(null, schema.items));

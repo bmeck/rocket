@@ -29,7 +29,6 @@ Path.prototype.peekAtValue = function () {
   return this.values[this.length - 1];
 }
 Path.prototype.push = function (key, value, done) {
-  console.log('pushing', key, value)
   var self = this;
   var length = this.length;
   this.keys[length] = key;
@@ -65,18 +64,21 @@ Path.prototype.pop = function (done) {
   var self = this;
   var length = this.length;
   var i = 0;
-  console.log(self.postconnections, self)
   async.whilst(
     function () {return i < length;},
     function (next) {
-      i++;
       var connections = self.postconnections[i];
+      i++;
       if (connections) {
-      	var deltaPath = self.keys.slice(i+1,self.length);
+      	var deltaPath = self.keys.slice(i,self.length);
+        console.log(deltaPath)
       	async.forEach(connections, function (connection, step) {
       	  if (connection.matches(deltaPath)) {
       	     self.execute(connection.transform, step);
-      	  } 
+      	  }
+          else {
+            step(null);
+          }
       	}, next);
         return;
       }
